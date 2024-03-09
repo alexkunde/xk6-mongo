@@ -176,10 +176,8 @@ func (c *Client) DropCollection(database string, collection string) error {
 }
 
 func (*Mongo) MongoEncode(input string) string {
-	log.Printf("%+v", input)
 	// https://www.mongodb.com/docs/manual/reference/connection-string/
 	r := strings.NewReplacer("%", "%25", "$", "%24", ":", "%3A", "/", "%2F", "?", "%3F", "#", "%23", "[", "%5B", "]", "%5D", "@", "%40")
 	res := r.Replace(input)
-	log.Printf("%+v", res)
 	return res
 }
