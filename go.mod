@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	go.k6.io/k6 v0.53.0
-	go.mongodb.org/mongo-driver v1.17.0
+	go.mongodb.org/mongo-driver v1.17.1
 )
 
 require (
