@@ -26,6 +26,11 @@ type Client struct {
 	client *mongo.Client
 }
 
+type UpsertOneModel struct {
+	Query  interface{} `json:"query"`
+	Update interface{} `json:"update"`
+}
+
 // NewClient represents the Client constructor (i.e. `new mongo.Client()`) and
 // returns a new Mongo client object.
 // The `connURI` parameter in the `NewClient` function is used to specify the connection URI for the
@@ -34,20 +39,19 @@ type Client struct {
 // as the username, password, address, port, database name, and connection options.
 // connURI -> mongodb://username:password@address:port/db?connect=direct
 // connURI -> mongodb+srv://username:password@address:port/db?authSource=admin
-func (*Mongo) NewClient(connURI string) interface{} {
+func (*Mongo) NewClient(connURI string) *Client{} {
+	log.Print("start creating new client")
 
 	clientOptions := options.Client().ApplyURI(connURI)
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Printf("Error on Connection")
-		log.Printf("%+v", err)
-		return err
+		log.Printf("Error while establishing a connection to MongoDB: %v", err)
+		return nil
 	}
 
+		log.Print("created new client")
 	return &Client{client: client}
 }
-
-const filter_is string = "filter is "
 
 func (c *Client) InsertOne(database string, collection string, doc string) error {
 	db := c.client.Database(database)
@@ -79,9 +83,43 @@ func (c *Client) InsertMany(database string, collection string, docs []any) erro
 	return nil
 }
 
-func (c *Client) FindMany(database string, collection string, filter string) []bson.M {
+func (c *Client) Upsert(database string, collection string, filter interface{}, update interface{}) error {
 	db := c.client.Database(database)
 	col := db.Collection(collection)
+
+	opts := options.Update().SetUpsert(true)
+	_, err := col.UpdateOne(context.Background(), filter, update, opts)
+	if err != nil {
+		log.Printf("Error while upserting: %v", err)
+		return err
+	}
+	return nil
+}
+
+
+
+func (c *Client) Aggregate(database string, collection string, pipeline interface{}) ([]bson.M, error) {
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+	cur, err := col.Aggregate(context.Background(), pipeline)
+	if err != nil {
+		log.Printf("Error while aggregating: %v", err)
+		return nil, err
+	}
+	var results []bson.M
+	if err = cur.All(context.Background(), &results); err != nil {
+		log.Printf("Error while decoding documents: %v", err)
+		return nil, err
+	}
+	return results, nil
+}
+
+func (c *Client) FindMany(database string, collection string, filter string, sort interface{}, limit int64) []bson.M, error {
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+
+	opts := options.Find().SetSort(sort).SetLimit(limit)
+
 
 	var bson_filter bson.D
 	if filter != "" {
@@ -92,19 +130,21 @@ func (c *Client) FindMany(database string, collection string, filter string) []b
 			return nil
 		}
 	} else {
-		log.Printf("Getting all Elements from Collection")
+		log.Printf("Setting filter to match all documents")
 		bson_filter = bson.D{}
 	}
 
-	cur, err := col.Find(context.TODO(), bson_filter)
+	cur, err := col.Find(context.Background(), bson_filter, opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error while finding documents: %v", err)
+		return nil, err
 	}
 	var results []bson.M
-	if err = cur.All(context.TODO(), &results); err != nil {
-		panic(err)
+	if err = cur.All(context.Background(), &results); err != nil {
+		log.Printf("Error while decoding documents: %v", err)
+		return nil, err
 	}
-	return results
+	return results, nil
 }
 
 func (c *Client) FindOne(database string, collection string, filter string) bson.M {
