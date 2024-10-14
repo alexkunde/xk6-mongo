@@ -199,19 +199,22 @@ func (c *Client) UpdateMany(database string, collection string, filter interface
 	return nil
 }
 
-func (c *Client) FindAll(database string, collection string) []bson.M {
+func (c *Client) FindAll(database string, collection string) ([]bson.M, error) {
 	log.Printf("Find all documents")
 	db := c.client.Database(database)
 	col := db.Collection(collection)
-	cur, err := col.Find(context.TODO(), bson.D{{}})
+	cur, err := col.Find(context.Background(), bson.D{{}})
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error while finding documents: %v", err)
+		return nil, err
 	}
+
 	var results []bson.M
-	if err = cur.All(context.TODO(), &results); err != nil {
-		panic(err)
+	if err = cur.All(context.Background(), &results); err != nil {
+		log.Printf("Error while decoding documents: %v", err)
+		return nil, err
 	}
-	return results
+	return results, nil
 }
 
 func (c *Client) DeleteOne(database string, collection string, filter map[string]string) error {
