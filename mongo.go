@@ -263,10 +263,13 @@ func (c *Client) DropCollection(database string, collection string) error {
 	log.Printf("Delete collection if present")
 	db := c.client.Database(database)
 	col := db.Collection(collection)
-	err := col.Drop(context.TODO())
+
+	err := col.Drop(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error while dropping the collection: %v", err)
+		return err
 	}
+
 	return nil
 }
 
