@@ -147,7 +147,7 @@ func (c *Client) FindMany(database string, collection string, filter string, sor
 	return results, nil
 }
 
-func (c *Client) FindOne(database string, collection string, filter string) bson.M {
+func (c *Client) FindOne(database string, collection string, filter string) (bson.M, error) {
 	db := c.client.Database(database)
 	col := db.Collection(collection)
 	log.Printf("MongoDB Query is %+v", filter)
@@ -161,34 +161,40 @@ func (c *Client) FindOne(database string, collection string, filter string) bson
 
 	var result bson.M
 	opts := options.FindOne().SetSort(bson.D{{"_id", 1}})
-	err = col.FindOne(context.TODO(), bson_filter, opts).Decode(&result)
+	err = col.FindOne(context.Background(), bson_filter, opts).Decode(&result)
 	if err == mongo.ErrNoDocuments {
 		log.Printf("No document was found for filter %v", filter)
 		return nil
 	}
 	if err != nil {
-		log.Printf("FindOne: %+v", err)
+		log.Printf("Error while finding the document: %v", err)
 		return nil
 	}
-	return result
+	return result, nil
 }
 
 func (c *Client) UpdateOne(database string, collection string, filter interface{}, data map[string]string) error {
-	// var result bson.M
 	db := c.client.Database(database)
 	col := db.Collection(collection)
 	update := bson.D{{"$set", data}}
-	result, err := col.UpdateOne(context.TODO(), filter, update)
+	result, err := col.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// opts := options.FindOne().SetSort(bson.D{{"_id", 1}})
-	// err = col.FindOne(context.TODO(), filter, opts).Decode(&result)
-	// if err == mongo.ErrNoDocuments {
-	// 	log.Printf("No document was found for filter %v", filter)
-	// 	return nil
-	// }
+	log.Printf("found document %v", result)
+	return nil
+}
+
+func (c *Client) UpdateMany(database string, collection string, filter interface{}, data bson.D) error {
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+	update := bson.D{{"$set", data}}
+	result, err := col.UpdateMany(context.Background(), filter, update)
+	if err != nil {
+		log.Printf("Error while updating the documents: %v", err)
+		return err
+	}
 	log.Printf("found document %v", result)
 	return nil
 }
