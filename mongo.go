@@ -220,11 +220,14 @@ func (c *Client) FindAll(database string, collection string) ([]bson.M, error) {
 func (c *Client) DeleteOne(database string, collection string, filter map[string]string) error {
 	db := c.client.Database(database)
 	col := db.Collection(collection)
+
 	result, err := col.DeleteOne(context.Background(), filter)
+
 	if err != nil {
 		log.Printf("Error while deleting the document: %v", err)
 		return err
 	}
+
 	log.Printf("Deleted documents %v", result)
 	return nil
 }
@@ -232,11 +235,14 @@ func (c *Client) DeleteOne(database string, collection string, filter map[string
 func (c *Client) DeleteMany(database string, collection string, filter map[string]string) error {
 	db := c.client.Database(database)
 	col := db.Collection(collection)
-	log.Print(filter_is, filter)
-	result, err := col.DeleteMany(context.TODO(), filter)
+
+	result, err := col.DeleteMany(context.Background(), filter)
+
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error while deleting the documents: %v", err)
+		return err
 	}
+
 	log.Printf("Deleted documents %v", result)
 	return nil
 }
