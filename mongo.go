@@ -273,6 +273,41 @@ func (c *Client) DropCollection(database string, collection string) error {
 	return nil
 }
 
+func (c *Client) CountDocuments(database string, collection string, filter interface{}) (int64, error) {
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+
+	count, err := col.CountDocuments(context.Background(), filter)
+	if err != nil {
+		log.Printf("Error while counting documents: %v", err)
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (c *Client) FindOneAndUpdate(database string, collection string, filter interface{}, update interface{}) (*mongo.SingleResult, error) {
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	result := col.FindOneAndUpdate(context.Background(), filter, update, opts)
+	if result.Err() != nil {
+		log.Printf("Error while finding and updating document: %v", result.Err())
+		return nil, result.Err()
+	}
+	return result, nil
+}
+
+func (c *Client) Disconnect() error {
+	err := c.client.Disconnect(context.Background())
+	if err != nil {
+		log.Printf("Error while disconnecting from the database: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 func (*Mongo) MongoEncode(input string) string {
 	// https://www.mongodb.com/docs/manual/reference/connection-string/
 	r := strings.NewReplacer("%", "%25", "$", "%24", ":", "%3A", "/", "%2F", "?", "%3F", "#", "%23", "[", "%5B", "]", "%5D", "@", "%40")
