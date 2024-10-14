@@ -64,7 +64,7 @@ func (c *Client) InsertOne(database string, collection string, doc string) error
 		return nil
 	}
 
-	_, err := col.InsertOne(context.TODO(), bson_doc)
+	_, err := col.InsertOne(context.Background(), bson_doc)
 	if err != nil {
 		log.Printf("InsertOne: %+v", err)
 		return err
@@ -76,7 +76,7 @@ func (c *Client) InsertMany(database string, collection string, docs []any) erro
 	log.Printf("Insert multiple documents")
 	db := c.client.Database(database)
 	col := db.Collection(collection)
-	_, err := col.InsertMany(context.TODO(), docs)
+	_, err := col.InsertMany(context.Background(), docs)
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (c *Client) FindOne(database string, collection string, filter string) (bso
 	return result, nil
 }
 
-func (c *Client) UpdateOne(database string, collection string, filter interface{}, data map[string]string) error {
+func (c *Client) UpdateOne(database string, collection string, filter interface{}, data map[string]string) (*mongo.UpdateResult, error) {
 	db := c.client.Database(database)
 	col := db.Collection(collection)
 	update := bson.D{{"$set", data}}
@@ -183,10 +183,10 @@ func (c *Client) UpdateOne(database string, collection string, filter interface{
 	}
 
 	log.Printf("found document %v", result)
-	return nil
+	return result, nil
 }
 
-func (c *Client) UpdateMany(database string, collection string, filter interface{}, data bson.D) error {
+func (c *Client) UpdateMany(database string, collection string, filter interface{}, data bson.D) (*mongo.UpdateResult, error) {
 	db := c.client.Database(database)
 	col := db.Collection(collection)
 	update := bson.D{{"$set", data}}
@@ -196,7 +196,7 @@ func (c *Client) UpdateMany(database string, collection string, filter interface
 		return err
 	}
 	log.Printf("found document %v", result)
-	return nil
+	return result, nil
 }
 
 func (c *Client) FindAll(database string, collection string) ([]bson.M, error) {
