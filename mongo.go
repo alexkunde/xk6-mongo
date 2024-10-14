@@ -247,6 +247,18 @@ func (c *Client) DeleteMany(database string, collection string, filter map[strin
 	return nil
 }
 
+func (c *Client) Distinct(database string, collection string, field string, filter interface{}) ([]interface{}, error) {
+	db := c.client.Database(database)
+	col := db.Collection(collection)
+	result, err := col.Distinct(context.Background(), field, filter)
+	if err != nil {
+		log.Printf("Error while getting distinct values: %v", err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (c *Client) DropCollection(database string, collection string) error {
 	log.Printf("Delete collection if present")
 	db := c.client.Database(database)
